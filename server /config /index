@@ -1,0 +1,32 @@
+const path = require('path');
+
+const configs = {
+    development: require('./development'),
+    production: require('./production')
+};
+
+function getRequestedEnv() {
+    const envArg = process.argv.find(arg => arg.startsWith('--env='));
+    return (envArg ? envArg.split('=')[1] : process.env.NODE_ENV) || 'development';
+}
+
+function loadConfig() {
+    const env = getRequestedEnv();
+
+    if (!configs[env]) {
+        throw new Error(`Okänd konfiguration "${env}". Använd development eller production.`);
+    }
+
+    const config = configs[env];
+
+    return {
+        ...config,
+        https: {
+            ...config.https,
+            keyPath: path.resolve(__dirname, '..', config.https.keyPath),
+            certPath: path.resolve(__dirname, '..', config.https.certPath)
+        }
+    };
+}
+
+module.exports = loadConfig();
