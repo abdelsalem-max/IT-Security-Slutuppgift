@@ -1,0 +1,4 @@
+export default {
+    env: 'development',
+    apiBaseUrl: 'http://localhost:8080'
+};
