@@ -1,0 +1,16 @@
+{
+  "name": "chat-server-mock",
+  "version": "1.0.0",
+  "description": "Mock-server för IT-säkerhetskursen",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js --env=development",
+    "start": "node server.js",
+    "start:prod": "node server.js --env=production"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
