@@ -1,7 +1,6 @@
 import { getMessages, sendMessage, searchUsers } from './api.js';
 import { getCurrentUser, isAuthenticated } from './auth.js';
-import { logError } from './utils.js';
-import DOMPurify from "../node_modules/dompurify/dist/purify.es.mjs";
+import { logError, sanitizeHtml } from './utils.js';
 
 let selectedUserId = null;
 let selectedUserName = null;
@@ -79,15 +78,24 @@ async function handleUserSearch() {
         const response = await searchUsers(searchTerm);
 
         if (response.users && response.users.length > 0) {
-            resultsDiv.innerHTML = response.users.map(user => `
-                <div class="user-item">
-                    <span>${user.username}</span>
-                    <button class="btn btn-secondary"
-                            onclick="selectUser(${user.id}, '${user.username}')">
-                        Välj
-                    </button>
-                </div>
-            `).join('');
+            resultsDiv.innerHTML = '';
+            response.users.forEach(user => {
+                const username = sanitizeHtml(user.username);
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+
+                const usernameSpan = document.createElement('span');
+                usernameSpan.textContent = username;
+
+                const selectButton = document.createElement('button');
+                selectButton.className = 'btn btn-secondary';
+                selectButton.type = 'button';
+                selectButton.textContent = 'Välj';
+                selectButton.addEventListener('click', () => selectUser(user.id, username));
+
+                userItem.append(usernameSpan, selectButton);
+                resultsDiv.appendChild(userItem);
+            });
         } else {
             resultsDiv.innerHTML = '<p style="color: #666;">Inga användare hittades</p>';
         }
@@ -99,12 +107,12 @@ async function handleUserSearch() {
 
 window.selectUser = function(userId, username) {
     selectedUserId = userId;
-    selectedUserName = username;
+    selectedUserName = sanitizeHtml(username);
     
     const infoDiv = document.getElementById('selected-user-info');
     const sendBtn = document.getElementById('send-btn');
     
-    infoDiv.innerHTML = `Skickar till: <strong>${username}</strong>`;
+    infoDiv.innerHTML = `Skickar till: <strong>${selectedUserName}</strong>`;
     sendBtn.disabled = false;
     
     document.getElementById('message-text').focus();
@@ -115,17 +123,14 @@ async function handleSendMessage(event) {
 
     const messageInput = document.getElementById('message-text');
     const sendBtn = document.getElementById('send-btn');
-    const currentUser = getCurrentUser();
     if (!selectedUserId) {
         alert('Vänligen välj en mottagare först.');
         return;
     }
 
-    const messageText = messageInput.value.trim();
+    const cleanText = sanitizeHtml(messageInput.value);
 
-    const cleanText = DOMPurify.sanitize(messageText);
-
-    if (messageText.length === 0) {
+    if (cleanText.length === 0) {
         return;
     }
 
@@ -133,7 +138,7 @@ async function handleSendMessage(event) {
     sendBtn.textContent = 'Skickar...';
 
     try {
-        const response = await sendMessage(currentUser.id, selectedUserId, messageText);
+        const response = await sendMessage(selectedUserId, cleanText);
 
         if (response.status === 'SUCCESS') {
             messageInput.value = '';
@@ -168,12 +173,12 @@ async function loadMessages() {
 
         messageListDiv.innerHTML = response.messages.map(msg => {
             const isOwnMessage = msg.from === currentUser.id;
-            const senderName = isOwnMessage ? 'Du' : msg.fromUsername;
+            const senderName = isOwnMessage ? 'Du' : sanitizeHtml(msg.fromUsername);
             
             return `
                 <div class="message-item" style="${isOwnMessage ? 'border-left-color: #2ecc71;' : ''}">
                     <div class="sender">${senderName} ${isOwnMessage ? '(du)' : ''}</div>
-                    <div class="text">${msg.message}</div>
+                    <div class="text">${sanitizeHtml(msg.message)}</div>
                 </div>
             `;
         }).reverse().join(''); 
