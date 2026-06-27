@@ -1,4 +1,4 @@
-import { getApiUrl, logError } from './utils.js';
+import { getApiUrl, logError, normalizeId, sanitizeHtml } from './utils.js';
 import { getAuthToken } from './auth.js';
 
 async function request(endpoint, options = {}) {
@@ -35,16 +35,20 @@ async function request(endpoint, options = {}) {
 }
 
 export async function login(username, password) {
+    const cleanUsername = sanitizeHtml(username);
+
     return request('/api/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: cleanUsername, password: String(password ?? '') }),
     });
 }
 
 export async function register(username, password) {
+    const cleanUsername = sanitizeHtml(username);
+
     return request('/api/register', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: cleanUsername, password: String(password ?? '') }),
     });
 }
 
@@ -53,16 +57,20 @@ export async function getCurrentUser() {
 }
 
 export async function searchUsers(searchQuery) {
-    return request(`/api/user?action=SEARCH&search=${searchQuery}`);
+    const cleanSearchQuery = encodeURIComponent(sanitizeHtml(searchQuery));
+    return request(`/api/user?action=SEARCH&search=${cleanSearchQuery}`);
 }
 
 export async function getMessages() {
     return request('/api/message');
 }
 
-export async function sendMessage(from, to, message) {
+export async function sendMessage(to, message) {
+    const cleanTo = normalizeId(to);
+    const cleanMessage = sanitizeHtml(message);
+
     return request('/api/message', {
         method: 'POST',
-        body: JSON.stringify({ from, to, message }),
+        body: JSON.stringify({ to: cleanTo, message: cleanMessage }),
     });
 }
