@@ -1,0 +1,14 @@
+{
+  "name": "chat-app",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=client",
+    "start:client": "npm run start --workspace=client",
+    "start:server": "npm run start --workspace=server"
+  }
+}
